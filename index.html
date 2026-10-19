@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Heaven's Door</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Kalam:wght@400;700&family=Noto+Sans+JP:wght@900&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --paper: #f3eee2;
+      --paper-back: #e4dccb;
+      --ink: #1b1a1d;
+      --red: #a60016;
+      --kq: #d9a6cf;
+      --void: #0c080b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      background:
+        radial-gradient(#00000022 1px, transparent 1.4px) 0 0 / 6px 6px,
+        #e7e1d3;
+      color: var(--ink);
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+      transition: filter .25s ease;
+    }
+
+    /* Top bar */
+
+    .hud {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 18px;
+      font-size: 10px;
+      letter-spacing: 3px;
+      color: #6b6560;
+      z-index: 40;
+    }
+
+    .hud-loop {
+      color: var(--red);
+    }
+
+    .hud button {
+      font: inherit;
+      letter-spacing: inherit;
+      color: inherit;
+      background: none;
+      border: 1px solid #b9b1a3;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+
+    .hud button:hover {
+      color: var(--ink);
+      border-color: var(--ink);
+    }
+
+    /* Stage */
+
+    .stage {
+      position: relative;
+      height: 100svh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 22px;
+      padding: 56px 16px 28px;
+    }
+
+    /* Speed lines that appear when Killer Queen shows up */
+    .stage::before {
+      content: "";
+      position: absolute;
+      inset: -50%;
+      background: repeating-conic-gradient(from 0deg at 50% 50%, #000 0deg 0.6deg, transparent 0.6deg 7deg);
+      opacity: 0;
+      transition: opacity .4s ease;
+      pointer-events: none;
+    }
+
+    /* Rohan's narration box */
+
+    .caption {
+      position: relative;
+      z-index: 5;
+      max-width: min(460px, 100%);
+      background: #fff;
+      border: 2px solid var(--ink);
+      box-shadow: 4px 4px 0 var(--ink);
+      padding: 12px 16px 12px;
+      transform: rotate(-1.2deg);
+      transition: transform .3s ease;
+    }
+
+    .caption b {
+      position: absolute;
+      top: -12px;
+      left: 12px;
+      background: var(--ink);
+      color: #fff;
+      font: 15px/1 "Bangers", Impact, sans-serif;
+      letter-spacing: 2px;
+      padding: 4px 8px 3px;
+    }
+
+    .caption p {
+      font: 700 16px/1.35 "Kalam", "Comic Sans MS", cursive;
+      min-height: 2.7em;
+    }
+
+    .caption.pop {
+      animation: pop .35s ease;
+    }
+
+    /* The book page (Hayato's page) */
+
+    .book {
+      position: relative;
+      z-index: 3;
+      width: min(420px, 84vw, calc((100svh - 260px) / 1.38));
+      aspect-ratio: 1 / 1.38;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* What's hiding under the page */
+
+    .beneath {
+      --p: 0;
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 68% 72%, rgb(150 30 110 / calc(.15 + var(--p) * .45)), transparent 60%),
+        var(--void);
+    }
+
+    .beneath .kq {
+      position: absolute;
+      right: -2%;
+      bottom: -2%;
+      width: 70%;
+      height: auto;
+      filter: brightness(calc(.35 + var(--p) * .65)) drop-shadow(0 0 18px #d93fa155);
+      transform: scale(calc(.92 + var(--p) * .08));
+      transform-origin: 70% 90%;
+      pointer-events: none;
+    }
+
+    /* Killer Queen's eyes catching the light */
+    .glint {
+      position: absolute;
+      left: 59%;
+      top: 64.5%;
+      width: 34px;
+      height: 34px;
+      transform: translate(-50%, -50%) scale(0);
+      background:
+        linear-gradient(transparent 46%, #fff 50%, transparent 54%),
+        linear-gradient(90deg, transparent 46%, #fff 50%, transparent 54%),
+        radial-gradient(circle, #fff 0 8%, #ff9ad8aa 18%, transparent 55%);
+      pointer-events: none;
+    }
+
+    .click-sfx {
+      position: absolute;
+      right: 6%;
+      bottom: 9%;
+      font: 900 clamp(26px, 8vw, 40px)/1 "Noto Sans JP", sans-serif;
+      color: #fff;
+      -webkit-text-stroke: 2px var(--red);
+      transform: rotate(-12deg) scale(0);
+      pointer-events: none;
+    }
+
+    .under-shade {
+      position: absolute;
+      transform-origin: 50% 0;
+      pointer-events: none;
+      background: linear-gradient(to bottom, rgba(0, 0, 0, .75), transparent 46px);
+    }
+
+    /* Front of the page */
+
+    .front {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, #00000014, transparent 9%),
+        var(--paper);
+      box-shadow: 0 18px 40px -18px #0006;
+      overflow: hidden;
+    }
+
+    .page-text {
+      position: absolute;
+      inset: 0;
+      padding: 9% 9% 8% 13%;
+      font-family: "Kalam", "Comic Sans MS", cursive;
+      font-size: clamp(11px, 3.4vw, 16.5px);
+      line-height: 1.75;
+      background:
+        linear-gradient(90deg, transparent calc(10% - 1px), #c0392b55 10%, transparent calc(10% + 1px)),
+        repeating-linear-gradient(transparent 0 calc(1.75em - 1px), #6a7fa033 calc(1.75em - 1px) 1.75em);
+      background-position: 0 0, 0 calc(9% + .2em);
+      pointer-events: none;
+    }
+
+    .page-text h2 {
+      font: 400 clamp(20px, 6vw, 30px)/1.1 "Bangers", Impact, sans-serif;
+      letter-spacing: 2px;
+      margin-bottom: .2em;
+    }
+
+    .page-text h2 small {
+      font-size: .5em;
+      color: #6b6560;
+      letter-spacing: 1px;
+    }
+
+    .page-text .meta {
+      color: #6b6560;
+    }
+
+    .page-text .secret {
+      color: var(--red);
+      font-weight: 700;
+    }
+
+    .page-text .folio {
+      position: absolute;
+      left: 13%;
+      bottom: 4%;
+      font-size: .75em;
+      color: #8d867c;
+    }
+
+    /* Folded-over flap = back of the page */
+
+    .flap-wrap {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .flap {
+      position: absolute;
+      inset: 0;
+      transform-origin: 0 0;
+      background: var(--paper-back);
+      overflow: hidden;
+    }
+
+    /* Text bleeding through from the other side (mirrored by the fold) */
+    .flap .page-text {
+      opacity: .09;
+      background: none;
+    }
+
+    .flap-shade {
+      position: absolute;
+      transform-origin: 50% 0;
+    }
+
+    .corner-hit {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      width: min(140px, 36%);
+      aspect-ratio: 1;
+      border: 0;
+      background: none;
+      cursor: grab;
+      z-index: 4;
+    }
+
+    .corner-hit:focus-visible {
+      outline: 2px dashed var(--red);
+      outline-offset: -6px;
+    }
+
+    .dragging .corner-hit {
+      cursor: grabbing;
+    }
+
+    .hint {
+      position: relative;
+      z-index: 5;
+      font-size: 10px;
+      letter-spacing: 4px;
+      color: #8d867c;
+      text-align: center;
+      transition: opacity .3s ease;
+    }
+
+    /* ゴゴゴゴ */
+
+    .menacing {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .menacing span {
+      position: absolute;
+      font: 900 clamp(30px, 7vw, 54px)/1 "Noto Sans JP", sans-serif;
+      color: #3a1d38;
+      -webkit-text-stroke: 1.5px #d9a6cf;
+      opacity: 0;
+    }
+
+    .menacing span:nth-child(1) { left: 8%;  top: 20%; --r: -10deg; }
+    .menacing span:nth-child(2) { left: 14%; top: 34%; --r: -6deg;  font-size: clamp(24px, 5vw, 40px); }
+    .menacing span:nth-child(3) { left: 9%;  top: 49%; --r: -14deg; }
+    .menacing span:nth-child(4) { right: 8%; top: 18%; --r: 8deg;   }
+    .menacing span:nth-child(5) { right: 13%; top: 32%; --r: 12deg; font-size: clamp(24px, 5vw, 40px); }
+    .menacing span:nth-child(6) { right: 7%; top: 47%; --r: 6deg;   }
+
+    /* Explosion */
+
+    .flash {
+      position: fixed;
+      inset: 0;
+      background: #fff;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 50;
+    }
+
+    .boom {
+      position: fixed;
+      inset: 0;
+      z-index: 45;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 16px;
+      opacity: 0;
+      pointer-events: none;
+      overflow: hidden;
+      background: radial-gradient(circle, #fff7d6 0 8%, #ffb347 18%, #e2361b 34%, #5c0a14 55%, #0c080b 78%);
+    }
+
+    .boom::before {
+      content: "";
+      position: absolute;
+      inset: -50%;
+      background: repeating-conic-gradient(from 0deg, #00000055 0deg 1.5deg, transparent 1.5deg 9deg);
+      animation: spin 6s linear infinite;
+    }
+
+    .boom h2,
+    .boom h3 {
+      position: relative;
+      font-family: "Bangers", Impact, sans-serif;
+      font-weight: 400;
+      color: #fff;
+      -webkit-text-stroke: 2px #1b1a1d;
+      text-shadow: 5px 5px 0 #1b1a1d;
+    }
+
+    .boom h2 {
+      font-size: clamp(22px, 5vw, 40px);
+      letter-spacing: 6px;
+    }
+
+    .boom h3 {
+      font-size: clamp(46px, 13vw, 140px);
+      line-height: .95;
+      letter-spacing: 3px;
+    }
+
+    .boom small {
+      position: relative;
+      margin-top: 18px;
+      font: 900 14px/1 "Noto Sans JP", sans-serif;
+      letter-spacing: 6px;
+      color: #fff;
+    }
+
+    /* Time rewinding */
+
+    .rewind {
+      position: fixed;
+      inset: 0;
+      z-index: 44;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      opacity: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(#0000 0 3px, #0000001a 3px 4px);
+    }
+
+    .clock {
+      width: min(160px, 40vw);
+      aspect-ratio: 1;
+      border: 4px solid var(--ink);
+      border-radius: 50%;
+      position: relative;
+      background: #ffffffcc;
+    }
+
+    .clock i {
+      position: absolute;
+      left: 50%;
+      bottom: 50%;
+      width: 4px;
+      margin-left: -2px;
+      background: var(--ink);
+      transform-origin: 50% 100%;
+      border-radius: 2px;
+    }
+
+    .clock .h { height: 28%; }
+    .clock .m { height: 42%; width: 3px; margin-left: -1.5px; }
+
+    .rewind p {
+      font: 400 clamp(26px, 7vw, 46px)/1 "Bangers", Impact, sans-serif;
+      letter-spacing: 4px;
+      color: var(--ink);
+      background: #fff;
+      border: 2px solid var(--ink);
+      padding: 6px 14px 4px;
+    }
+
+    /* ---------- Phases ---------- */
+
+    body[data-phase="reveal"] .stage::before,
+    body[data-phase="click"] .stage::before {
+      opacity: .07;
+    }
+
+    body[data-phase="reveal"] .menacing span,
+    body[data-phase="click"] .menacing span {
+      animation: menace 1.6s ease-in-out infinite;
+    }
+
+    .menacing span:nth-child(2n) { animation-delay: -.5s !important; }
+    .menacing span:nth-child(3n) { animation-delay: -1s !important; }
+
+    body[data-phase="reveal"] .glint,
+    body[data-phase="click"] .glint {
+      animation: glint .9s ease .55s both;
+    }
+
+    body[data-phase="reveal"] .hint,
+    body[data-phase="click"] .hint,
+    body[data-phase="boom"] .hint,
+    body[data-phase="rewind"] .hint {
+      opacity: 0;
+    }
+
+    body:not([data-phase="idle"]) .corner-hit {
+      pointer-events: none;
+    }
+
+    body[data-phase="click"] .click-sfx {
+      animation: stamp .3s cubic-bezier(.2, 2, .4, 1) forwards;
+    }
+
+    body[data-phase="click"] .stage {
+      animation: shake .25s linear 2;
+    }
+
+    body[data-phase="boom"] .flash {
+      animation: flash .9s ease-out forwards;
+    }
+
+    body[data-phase="boom"] .boom {
+      opacity: 1;
+      animation: boom 2.6s ease-out forwards;
+    }
+
+    body[data-phase="boom"] .stage {
+      animation: shake .12s linear infinite;
+    }
+
+    body[data-phase="rewind"] {
+      filter: invert(1) hue-rotate(180deg) contrast(1.1);
+    }
+
+    body[data-phase="rewind"] .rewind {
+      opacity: 1;
+    }
+
+    body[data-phase="rewind"] .clock .m {
+      animation: spin 0.45s linear infinite reverse;
+    }
+
+    body[data-phase="rewind"] .clock .h {
+      animation: spin 5.4s linear infinite reverse;
+    }
+
+    body[data-phase="rewind"] .caption p {
+      transform: scaleX(-1);
+    }
+
+    /* ---------- Keyframes ---------- */
+
+    @keyframes pop {
+      0% { transform: rotate(-1.2deg) scale(.96); }
+      60% { transform: rotate(-1.2deg) scale(1.03); }
+      100% { transform: rotate(-1.2deg) scale(1); }
+    }
+
+    @keyframes menace {
+      0%, 100% { opacity: .9; transform: rotate(var(--r)) translateY(0) scale(1); }
+      50% { opacity: .55; transform: rotate(var(--r)) translateY(-8px) scale(1.08); }
+    }
+
+    @keyframes glint {
+      0% { transform: translate(-50%, -50%) scale(0) rotate(0deg); }
+      40% { transform: translate(-50%, -50%) scale(1.4) rotate(45deg); }
+      100% { transform: translate(-50%, -50%) scale(0) rotate(90deg); }
+    }
+
+    @keyframes stamp {
+      to { transform: rotate(-12deg) scale(1); }
+    }
+
+    @keyframes shake {
+      0% { transform: translate(0, 0); }
+      25% { transform: translate(-5px, 3px); }
+      50% { transform: translate(4px, -4px); }
+      75% { transform: translate(-3px, -2px); }
+      100% { transform: translate(0, 0); }
+    }
+
+    @keyframes flash {
+      0% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    @keyframes boom {
+      0% { background-size: 40% 40%; background-position: center; }
+      30% { background-size: 160% 160%; }
+      100% { background-size: 220% 220%; }
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      body[data-phase="click"] .stage,
+      body[data-phase="boom"] .stage,
+      .boom::before,
+      .menacing span {
+        animation: none !important;
+      }
+
+      body[data-phase="reveal"] .menacing span,
+      body[data-phase="click"] .menacing span {
+        opacity: .8;
+        transform: rotate(var(--r));
+      }
+    }
+  </style>
+</head>
+
+<body data-phase="idle">
+
+  <header class="hud">
+    <span>ヘブンズ・ドアー — HEAVEN'S DOOR</span>
+    <span class="hud-loop" id="loopLabel">LOOP 1</span>
+    <button id="soundToggle" type="button" aria-pressed="true">SOUND ON</button>
+  </header>
+
+  <main class="stage" id="stage">
+
+    <div class="menacing" aria-hidden="true">
+      <span>ゴ</span><span>ゴ</span><span>ゴ</span>
+      <span>ゴ</span><span>ゴ</span><span>ゴ</span>
+    </div>
+
+    <div class="caption" id="caption">
+      <b>ROHAN</b>
+      <p id="captionText" aria-live="polite"></p>
+    </div>
+
+    <div class="book" id="book">
+
+      <div class="beneath" id="beneath">
+        <img class="kq" src="assets/killer-queen.png" alt="Killer Queen crouching underneath the page">
+        <div class="glint"></div>
+        <div class="click-sfx" aria-hidden="true">カチッ</div>
+        <div class="under-shade" id="underShade"></div>
+      </div>
+
+      <div class="front" id="front">
+        <div class="page-text" id="pageText">
+          <h2>KAWAJIRI HAYATO <small>川尻 早人</small></h2>
+          <p class="meta">Age 11. Grade 5, Morioh.</p>
+          <p>Lives with Mama and Papa near the station.</p>
+          <p>One night Papa came home different.</p>
+          <p>He signs his name with another hand now.</p>
+          <p>He keeps his fingernails in jars.</p>
+          <p>I hid cameras all over the house.</p>
+          <p>I saw what he did. I know he isn't Papa.</p>
+          <p>I can't tell anyone. If I do, it goes off.</p>
+          <p class="secret">His real name is Kira Yoshi—</p>
+          <span class="folio">p. 11</span>
+        </div>
+      </div>
+
+      <div class="flap-wrap" id="flapWrap">
+        <div class="flap" id="flap">
+          <div class="flap-shade" id="flapShade"></div>
+        </div>
+      </div>
+
+      <button class="corner-hit" id="cornerHit" type="button" aria-label="Peel back the corner of the page"></button>
+    </div>
+
+    <p class="hint" id="hint">DRAG THE CORNER TO TURN THE PAGE</p>
+  </main>
+
+  <div class="flash"></div>
+
+  <div class="boom" aria-hidden="true">
+    <h2>KILLER QUEEN · 第3の爆弾</h2>
+    <h3>BITES THE<br>DUST</h3>
+    <small>負けて死ね</small>
+  </div>
+
+  <div class="rewind" aria-hidden="true">
+    <div class="clock"><i class="h"></i><i class="m"></i></div>
+    <p>◀◀ ONE HOUR EARLIER</p>
+  </div>
+
+  <script>
+    const $ = (s) => document.querySelector(s);
+
+    const book = $("#book");
+    const beneath = $("#beneath");
+    const front = $("#front");
+    const flap = $("#flap");
+    const flapWrap = $("#flapWrap");
+    const flapShade = $("#flapShade");
+    const underShade = $("#underShade");
+    const cornerHit = $("#cornerHit");
+    const captionBox = $("#caption");
+    const captionText = $("#captionText");
+    const loopLabel = $("#loopLabel");
+    const soundToggle = $("#soundToggle");
+
+    // The ghost text on the back of the page is just a copy of the front
+    flap.prepend($("#pageText").cloneNode(true));
+
+    const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // ---------- Story ----------
+
+    const lines = {
+      idle: "Heaven's Door! Kawajiri Hayato… you know something about your \"father.\" Let me read it.",
+      deja: "…Strange. I feel like I've already read this boy's pages. Déjà vu?",
+      peek: "Hm? The last line runs under the corner… \"His real name is—\"",
+      reveal: "Wh— what is THAT doing inside the page!? KILLER QUEEN!",
+      click: "It was a trap. The bomb was hidden in the boy himself…",
+      rewind: "…",
+    };
+
+    let loop = 1;
+    let phase = "idle";
+
+    function say(text) {
+      if (captionText.textContent === text) return;
+      captionText.textContent = text;
+      captionBox.classList.remove("pop");
+      void captionBox.offsetWidth;
+      captionBox.classList.add("pop");
+    }
+
+    function setPhase(name) {
+      phase = name;
+      document.body.dataset.phase = name;
+    }
+
+    // ---------- Page peel geometry ----------
+    // The dragged corner sits at P. The fold line is the perpendicular
+    // bisector between the real corner C and P; everything on C's side
+    // gets mirrored across that line to become the flap.
+
+    const CLOSED = { u: 1, v: 1 };
+    const OPEN = { u: 0, v: 0.05 };
+
+    let W = 0;
+    let H = 0;
+    let P = { ...CLOSED }; // stored as fractions of the page size
+
+    function clipHalf(poly, f) {
+      const out = [];
+
+      for (let i = 0; i < poly.length; i++) {
+        const a = poly[i];
+        const b = poly[(i + 1) % poly.length];
+        const fa = f(a);
+        const fb = f(b);
+
+        if (fa >= 0) out.push(a);
+
+        if ((fa >= 0) !== (fb >= 0)) {
+          const t = fa / (fa - fb);
+          out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]);
+        }
+      }
+
+      return out;
+    }
+
+    function toClip(pts) {
+      if (pts.length < 3) return "polygon(0 0, 0 0, 0 0)";
+      return "polygon(" + pts.map(([x, y]) => `${x.toFixed(2)}px ${y.toFixed(2)}px`).join(",") + ")";
+    }
+
+    // A wide strip whose top edge lies on the fold line, pointing along (ux, uy)
+    function placeBand(el, mx, my, ux, uy) {
+      const L = Math.hypot(W, H) * 2;
+      el.style.width = L + "px";
+      el.style.height = L / 2 + "px";
+      el.style.left = mx - L / 2 + "px";
+      el.style.top = my + "px";
+      el.style.transform = `rotate(${Math.atan2(-ux, uy)}rad)`;
+    }
+
+    function openDistance() {
+      return Math.hypot(W - OPEN.u * W, H - OPEN.v * H);
+    }
+
+    function render() {
+      const px = P.u * W;
+      const py = P.v * H;
+      const dx = W - px;
+      const dy = H - py;
+      const d = Math.hypot(dx, dy);
+
+      const progress = Math.min(1, d / openDistance());
+      beneath.style.setProperty("--p", progress.toFixed(3));
+
+      if (d < 0.5) {
+        front.style.clipPath = "none";
+        flapWrap.style.visibility = "hidden";
+        return;
+      }
+
+      flapWrap.style.visibility = "visible";
+
+      const nx = dx / d;
+      const ny = dy / d;
+      const mx = (W + px) / 2;
+      const my = (H + py) / 2;
+      const side = ([x, y]) => (x - mx) * nx + (y - my) * ny;
+      const rect = [[0, 0], [W, 0], [W, H], [0, H]];
+
+      front.style.clipPath = toClip(clipHalf(rect, (p) => -side(p)));
+      flap.style.clipPath = toClip(clipHalf(rect, side));
+
+      // Reflection across the fold line
+      const k = 2 * (mx * nx + my * ny);
+      flap.style.transform =
+        `matrix(${1 - 2 * nx * nx}, ${-2 * nx * ny}, ${-2 * nx * ny}, ${1 - 2 * ny * ny}, ${k * nx}, ${k * ny})`;
+
+      placeBand(flapShade, mx, my, nx, ny);
+      flapShade.style.background =
+        `linear-gradient(to bottom, rgba(0,0,0,.2) 0px, rgba(255,255,255,.6) 12px, rgba(255,255,255,0) 55px, rgba(0,0,0,.14) ${Math.max(60, d / 2)}px)`;
+
+      placeBand(underShade, mx, my, nx, ny);
+
+      const s = Math.min(1, d / 120);
+      flapWrap.style.filter =
+        `drop-shadow(${(-nx * 7 * s).toFixed(1)}px ${(-ny * 7 * s).toFixed(1)}px ${(9 * s).toFixed(1)}px rgba(0,0,0,${(0.38 * s).toFixed(2)}))`;
+    }
+
+    function measure() {
+      W = book.clientWidth;
+      H = book.clientHeight;
+      render();
+    }
+
+    new ResizeObserver(measure).observe(book);
+
+    // ---------- Tweening ----------
+
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    const easeOutBack = (t) => 1 + 2.2 * Math.pow(t - 1, 3) + 1.2 * Math.pow(t - 1, 2);
+    const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+
+    function tweenTo(target, ms, ease) {
+      const from = { ...P };
+
+      return new Promise((resolve) => {
+        const start = performance.now();
+
+        function step(now) {
+          const t = Math.min(1, (now - start) / ms);
+          const e = ease(t);
+          P = { u: from.u + (target.u - from.u) * e, v: from.v + (target.v - from.v) * e };
+          render();
+          t < 1 ? requestAnimationFrame(step) : resolve();
+        }
+
+        requestAnimationFrame(step);
+      });
+    }
+
+    // ---------- Idle "breathing" corner ----------
+
+    let dragging = false;
+    let tweening = false;
+
+    function idleTick(now) {
+      if (phase === "idle" && !dragging && !tweening && W) {
+        const lift = reduceMotion ? 0.05 : 0.045 + 0.025 * Math.sin(now / 520);
+        P = { u: 1 - lift, v: 1 - lift * (W / H) };
+        render();
+      }
+      requestAnimationFrame(idleTick);
+    }
+
+    requestAnimationFrame(idleTick);
+
+    // ---------- Dragging ----------
+
+    let grab = { x: 0, y: 0 };
+    let moved = 0;
+
+    function local(e) {
+      const r = book.getBoundingClientRect();
+      return { x: e.clientX - r.left, y: e.clientY - r.top };
+    }
+
+    cornerHit.addEventListener("pointerdown", (e) => {
+      if (phase !== "idle") return;
+
+      unlockAudio();
+      dragging = true;
+      moved = 0;
+      book.classList.add("dragging");
+      cornerHit.setPointerCapture(e.pointerId);
+
+      const p = local(e);
+      grab = { x: P.u * W - p.x, y: P.v * H - p.y };
+    });
+
+    cornerHit.addEventListener("pointermove", (e) => {
+      if (!dragging) return;
+
+      const p = local(e);
+      const x = Math.max(-0.05 * W, Math.min(W, p.x + grab.x));
+      const y = Math.max(-0.05 * H, Math.min(H, p.y + grab.y));
+
+      moved += Math.abs(e.movementX) + Math.abs(e.movementY);
+      P = { u: x / W, v: y / H };
+      render();
+
+      const progress = Math.hypot(W - x, H - y) / openDistance();
+      if (progress > 0.18) say(lines.peek);
+    });
+
+    function endDrag() {
+      if (!dragging) return;
+
+      dragging = false;
+      book.classList.remove("dragging");
+
+      const progress = Math.hypot(W - P.u * W, H - P.v * H) / openDistance();
+
+      if (progress > 0.42 || moved < 6) {
+        bitesTheDust();
+      } else {
+        tweening = true;
+        tweenTo(CLOSED, 380, easeInOut).then(() => (tweening = false));
+        say(loop > 1 ? lines.deja : lines.idle);
+      }
+    }
+
+    cornerHit.addEventListener("pointerup", endDrag);
+    cornerHit.addEventListener("pointercancel", endDrag);
+
+    // Keyboard: Enter / Space on the corner turns the page
+    cornerHit.addEventListener("click", (e) => {
+      if (e.detail === 0 && phase === "idle") {
+        unlockAudio();
+        bitesTheDust();
+      }
+    });
+
+    // ---------- The scene ----------
+
+    async function bitesTheDust() {
+      if (phase !== "idle") return;
+
+      setPhase("reveal");
+      tweening = true;
+      say(lines.reveal);
+
+      // Each beat waits for its clip to finish (or a fixed time if it can't play)
+      await Promise.all([
+        tweenTo(OPEN, 700, easeOutBack),
+        playClip(clips.bite, 2600, sfx.rumble),
+      ]);
+
+      setPhase("click");
+      say(lines.click);
+      await Promise.all([playClip(clips.detonate, 1000, sfx.click), sleep(900)]);
+
+      setPhase("boom");
+      await Promise.all([playClip(clips.explode, 2700, sfx.boom), sleep(2700)]);
+
+      setPhase("rewind");
+      say(lines.rewind);
+      await Promise.all([
+        tweenTo(CLOSED, 1500, easeInOut),
+        playClip(clips.rewind, 2000, sfx.rewind),
+      ]);
+
+      loop++;
+      loopLabel.textContent = `LOOP ${loop}`;
+      tweening = false;
+      setPhase("idle");
+      say(lines.deja);
+    }
+
+    say(lines.idle);
+
+    // ---------- Sound (synthesised, no files needed) ----------
+
+    let ac = null;
+    let soundOn = true;
+
+    function unlockAudio() {
+      if (!soundOn) return;
+      try {
+        ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+        if (ac.state === "suspended") ac.resume();
+      } catch (err) {
+        ac = null;
+      }
+    }
+
+    function noiseSource(seconds) {
+      const buf = ac.createBuffer(1, ac.sampleRate * seconds, ac.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+      const src = ac.createBufferSource();
+      src.buffer = buf;
+      return src;
+    }
+
+    function envelope(peak, attack, release) {
+      const g = ac.createGain();
+      const t = ac.currentTime;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(peak, t + attack);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + attack + release);
+      g.connect(ac.destination);
+      return g;
+    }
+
+    const sfx = {
+      rumble() {
+        if (!ac || !soundOn) return;
+        const t = ac.currentTime;
+        const osc = ac.createOscillator();
+        const lfo = ac.createOscillator();
+        const lfoGain = ac.createGain();
+        const g = envelope(0.35, 0.4, 2.2);
+        osc.type = "sawtooth";
+        osc.frequency.value = 48;
+        lfo.frequency.value = 9;
+        lfoGain.gain.value = 0.25;
+        lfo.connect(lfoGain).connect(g.gain);
+        const lp = ac.createBiquadFilter();
+        lp.type = "lowpass";
+        lp.frequency.value = 220;
+        osc.connect(lp).connect(g);
+        osc.start(t);
+        lfo.start(t);
+        osc.stop(t + 2.7);
+        lfo.stop(t + 2.7);
+      },
+
+      click() {
+        if (!ac || !soundOn) return;
+        const t = ac.currentTime;
+        const osc = ac.createOscillator();
+        osc.type = "square";
+        osc.frequency.setValueAtTime(2400, t);
+        osc.frequency.exponentialRampToValueAtTime(900, t + 0.03);
+        osc.connect(envelope(0.25, 0.002, 0.05));
+        osc.start(t);
+        osc.stop(t + 0.07);
+      },
+
+      boom() {
+        if (!ac || !soundOn) return;
+        const t = ac.currentTime;
+        const n = noiseSource(2.4);
+        const lp = ac.createBiquadFilter();
+        lp.type = "lowpass";
+        lp.frequency.setValueAtTime(3000, t);
+        lp.frequency.exponentialRampToValueAtTime(80, t + 2.2);
+        n.connect(lp).connect(envelope(0.9, 0.01, 2.3));
+        n.start(t);
+
+        const sub = ac.createOscillator();
+        sub.frequency.setValueAtTime(110, t);
+        sub.frequency.exponentialRampToValueAtTime(28, t + 1.5);
+        sub.connect(envelope(0.8, 0.01, 1.6));
+        sub.start(t);
+        sub.stop(t + 1.7);
+      },
+
+      rewind() {
+        if (!ac || !soundOn) return;
+        const t = ac.currentTime;
+        const osc = ac.createOscillator();
+        const lp = ac.createBiquadFilter();
+        osc.type = "sawtooth";
+        osc.frequency.setValueAtTime(140, t);
+        osc.frequency.exponentialRampToValueAtTime(1600, t + 1.6);
+        lp.type = "lowpass";
+        lp.frequency.value = 1800;
+        osc.connect(lp).connect(envelope(0.12, 0.2, 1.5));
+        osc.start(t);
+        osc.stop(t + 1.8);
+      },
+    };
+
+    // ---------- Sound clips ----------
+
+    const clips = {
+      bite: new Audio("assets/bite-the-dust.mp3"),
+      detonate: new Audio("assets/detonate.mp3"),
+      explode: new Audio("assets/explode.mp3"),
+      rewind: new Audio("assets/time-reverse.mp3"),
+    };
+
+    Object.values(clips).forEach((a) => (a.preload = "auto"));
+
+    function stopClips() {
+      Object.values(clips).forEach((a) => a.pause());
+    }
+
+    // Plays a clip and resolves when it ends. If it can't play,
+    // uses the synth fallback and waits fallbackMs instead.
+    function playClip(audio, fallbackMs, fallbackSfx) {
+      return new Promise((resolve) => {
+        let done = false;
+        const finish = () => {
+          if (done) return;
+          done = true;
+          audio.onended = null;
+          resolve();
+        };
+
+        const fallback = () => {
+          fallbackSfx();
+          setTimeout(finish, fallbackMs);
+        };
+
+        if (!soundOn) {
+          setTimeout(finish, fallbackMs);
+          return;
+        }
+
+        // Hard cap so the scene never hangs if play() stays pending
+        setTimeout(finish, 10000);
+
+        audio.currentTime = 0;
+        audio.onended = finish;
+        audio.play()
+          .then(() => {
+            // Safety net in case "ended" never fires
+            const seconds = Number.isFinite(audio.duration) ? audio.duration : fallbackMs / 1000;
+            setTimeout(finish, seconds * 1000 + 400);
+          })
+          .catch(fallback);
+      });
+    }
+
+    soundToggle.addEventListener("click", () => {
+      soundOn = !soundOn;
+      soundToggle.textContent = soundOn ? "SOUND ON" : "SOUND OFF";
+      soundToggle.setAttribute("aria-pressed", String(soundOn));
+      if (!soundOn) stopClips();
+      else unlockAudio();
+    });
+  </script>
+
+</body>
+</html>
